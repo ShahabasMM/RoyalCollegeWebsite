@@ -92,6 +92,9 @@ const PAGE_STAMP_KEYS = [
   "site_addon_courses",
   "site_news",
   "site_pages",
+  // Gallery edits replace the whole photo list, so they are a page-level change
+  // rather than a chrome-level one.
+  "site_gallery",
 ];
 
 const FLASH_KEY = "site_flash_news";

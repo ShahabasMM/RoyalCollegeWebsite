@@ -140,7 +140,9 @@ button{cursor:pointer}
 .program-image{background:#dce8f7;height:207px;position:relative;overflow:hidden}
 .program-image:after,.news-image:after,.gallery-overlay{content:"";position:absolute;inset:0}
 .program-image:after{background:linear-gradient(#0413260d,#04132659)}
-.program-image img{object-fit:cover;transition:transform .7s cubic-bezier(.22,1,.36,1)}
+/* Plain <img> now, so the sizing that used to come from the Next image
+   component has to be declared here: fill the box and crop. */
+.program-image img{object-fit:cover;width:100%;height:100%;position:absolute;inset:0;transition:transform .7s cubic-bezier(.22,1,.36,1)}
 .program-card:hover .program-image img,.news-card:hover .news-image img,.gallery-item:hover img{transform:scale(1.06)}
 .program-index{z-index:1;color:#fffc;letter-spacing:1px;font-size:10px;font-weight:600;position:absolute;top:14px;left:15px}
 .program-arrow{z-index:2;color:#fff;background:#04132659;border:1px solid #ffffff5c;border-radius:50%;place-items:center;width:32px;height:32px;transition:background .35s,transform .35s;display:grid;position:absolute;bottom:14px;right:14px}
@@ -196,7 +198,7 @@ button{cursor:pointer}
 .news-card{border:1px solid var(--line);border-radius:var(--radius-md);background:#fff;transition:transform .4s,box-shadow .4s,border-color .4s;overflow:hidden;box-shadow:0 8px 24px #071a3308}
 .news-card:hover{box-shadow:var(--shadow-md);border-color:#cbdcf7;transform:translateY(-6px)}
 .news-image{background:#dce8f7;height:218px;display:block;position:relative;overflow:hidden}
-.news-image img{object-fit:cover;transition:transform .7s cubic-bezier(.22,1,.36,1)}
+.news-image img{object-fit:cover;width:100%;height:100%;position:absolute;inset:0;transition:transform .7s cubic-bezier(.22,1,.36,1)}
 .news-image:after{background:linear-gradient(#04132605,#04132652)}
 .news-image-arrow{z-index:1;color:#fff;background:#04132659;border:1px solid #fff6;border-radius:50%;place-items:center;width:33px;height:33px;transition:background .35s,transform .35s;display:grid;position:absolute;bottom:15px;right:15px}
 .news-card:hover .news-image-arrow{background:var(--blue);transform:rotate(8deg)}
@@ -1156,22 +1158,18 @@ h1,h2,h3{overflow-wrap:break-word}
 }
 
 /* ============================================================
-   Media gallery (Instagram photos + reels) with lightbox
+   Media gallery (CMS photographs, details on hover)
    ============================================================ */
 .mg-content { padding: 92px 0 110px; }
 .mg-head { max-width: 760px; margin: 0 0 34px; }
 .mg-head h2 { margin: 0 0 14px; font-size: clamp(1.9rem, 3.4vw, 2.7rem); line-height: 1.15; letter-spacing: -0.02em; }
-.mg-head .lead { margin: 0 0 20px; color: var(--muted); line-height: 1.8; }
-.mg-follow {
-  display: inline-flex; align-items: center; gap: 10px;
-  padding: 11px 20px; border-radius: 999px;
-  background: var(--navy); color: #fff; text-decoration: none;
-  font-size: 0.86rem; font-weight: 600; letter-spacing: 0.01em;
-  box-shadow: var(--shadow-blue);
-  transition: transform 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+.mg-head .lead { margin: 0; color: var(--muted); line-height: 1.8; }
+.mg-empty {
+  margin: 0; padding: 46px 30px; text-align: center;
+  border: 1px dashed var(--line); border-radius: var(--radius-md);
+  background: var(--surface); color: var(--muted);
+  font-size: 1rem; line-height: 1.7;
 }
-.mg-follow svg { width: 18px; height: 18px; fill: currentColor; }
-.mg-follow:hover { background: var(--blue-dark); transform: translateY(-2px); }
 
 .mg-filters { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 26px; }
 .mg-filter {
@@ -1184,25 +1182,38 @@ h1,h2,h3{overflow-wrap:break-word}
 .mg-filter.is-active { background: var(--navy); border-color: var(--navy); color: #fff; }
 
 .mg-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; align-items: start; }
+
+/* The tile is a link when the photo has one and a plain div when it does not,
+   so it needs no button reset. Both are just a box holding the photo. */
 .mg-tile {
   position: relative; display: block; width: 100%; padding: 0; margin: 0;
-  border: 0; border-radius: var(--radius-md); overflow: hidden; cursor: pointer;
+  aspect-ratio: 4 / 5; color: inherit; text-decoration: none;
+  border-radius: var(--radius-md); overflow: hidden;
   background: var(--navy-soft); box-shadow: var(--shadow-sm);
   transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.4s ease;
 }
-.mg-tile-square { aspect-ratio: 1 / 1; }
-.mg-tile-wide { aspect-ratio: 16 / 10; }
-.mg-tile-tall { aspect-ratio: 4 / 5; }
-.mg-tile-media { object-fit: cover; transition: transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1), filter 0.4s ease; }
+/* next/image used to supply the sizing here. With a plain <img> the tile has to
+   do it: absolutely positioned to fill the box, object-fit to crop. */
+.mg-tile-media {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transition: transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1), filter 0.4s ease;
+}
+
+/* The black shade. Invisible until the photo is hovered or focused, then it
+   darkens the lower part of the image enough to carry white text. */
 .mg-tile-scrim {
   position: absolute; inset: 0;
-  background: linear-gradient(180deg, rgba(4, 19, 38, 0) 42%, rgba(4, 19, 38, 0.82) 100%);
-  opacity: 0.55; transition: opacity 0.4s ease;
+  background: linear-gradient(180deg, rgba(4, 19, 38, 0) 30%, rgba(4, 19, 38, 0.55) 62%, rgba(4, 19, 38, 0.92) 100%);
+  opacity: 0; transition: opacity 0.4s ease;
 }
 .mg-tile-meta {
-  position: absolute; inset: auto 0 0 0; padding: 18px;
-  display: flex; flex-direction: column; gap: 7px; text-align: left;
-  transform: translateY(6px); transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+  position: absolute; inset: auto 0 0 0; padding: 20px 18px;
+  display: flex; flex-direction: column; gap: 8px; text-align: left;
+  /* Slides up into the shade so the details arrive with it. */
+  transform: translateY(10px);
+  transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 .mg-tile-cat {
   align-self: flex-start; padding: 4px 11px; border-radius: 999px;
@@ -1210,111 +1221,25 @@ h1,h2,h3{overflow-wrap:break-word}
   color: #fff; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
   backdrop-filter: blur(6px);
 }
-.mg-tile-caption { color: #fff; font-size: 0.94rem; font-weight: 600; line-height: 1.45; text-shadow: 0 2px 12px rgba(4, 19, 38, 0.5); }
+.mg-tile-caption { color: #fff; font-size: 1rem; font-weight: 700; line-height: 1.4; text-shadow: 0 2px 12px rgba(4, 19, 38, 0.6); }
+.mg-tile-text {
+  color: rgba(255, 255, 255, 0.86); font-size: 0.86rem; line-height: 1.6;
+  text-shadow: 0 2px 10px rgba(4, 19, 38, 0.6);
+  /* Long descriptions are clipped rather than allowed to overflow the tile. */
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3;
+  overflow: hidden;
+}
+
 .mg-tile:hover, .mg-tile:focus-visible { transform: translateY(-6px); box-shadow: var(--shadow-md); outline: none; }
-.mg-tile:hover .mg-tile-media, .mg-tile:focus-visible .mg-tile-media { transform: scale(1.08); }
-.mg-tile:hover .mg-tile-scrim, .mg-tile:focus-visible .mg-tile-scrim { opacity: 0.9; }
+.mg-tile:hover .mg-tile-media, .mg-tile:focus-visible .mg-tile-media { transform: scale(1.07); }
+.mg-tile:hover .mg-tile-scrim, .mg-tile:focus-visible .mg-tile-scrim { opacity: 1; }
 .mg-tile:hover .mg-tile-meta, .mg-tile:focus-visible .mg-tile-meta { transform: translateY(0); }
 
-.mg-play {
-  position: absolute; top: 16px; right: 16px;
-  width: 52px; height: 52px; border-radius: 50%;
-  display: grid; place-items: center;
-  background: rgba(255, 255, 255, 0.92); color: var(--navy);
-  box-shadow: 0 10px 26px rgba(4, 19, 38, 0.35);
-  transition: transform 0.3s ease;
-}
-.mg-play svg { width: 26px; height: 26px; fill: currentColor; margin-left: 3px; }
-.mg-play::after {
-  content: ""; position: absolute; inset: 0; border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.65);
-  animation: mg-pulse 2.4s ease-out infinite;
-}
-.mg-tile:hover .mg-play { transform: scale(1.08); }
-@keyframes mg-pulse {
-  0% { transform: scale(1); opacity: 0.8; }
-  70% { transform: scale(1.5); opacity: 0; }
-  100% { transform: scale(1.5); opacity: 0; }
-}
-
-.mg-lightbox {
-  position: fixed; inset: 0; z-index: 200;
-  display: grid; place-items: center;
-  padding: 26px 76px 108px;
-  background: rgba(4, 12, 26, 0.93);
-  backdrop-filter: blur(16px);
-  animation: mg-fade 0.26s ease both;
-}
-.mg-lb-figure {
-  margin: 0; width: 100%; max-width: 1180px;
-  display: flex; flex-direction: column; gap: 16px;
-  animation: mg-pop 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
-.mg-lb-stage {
-  position: relative; overflow: hidden;
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.04);
-  box-shadow: 0 40px 90px rgba(0, 0, 0, 0.55);
-}
-.mg-lb-media {
-  display: block; width: 100%; height: auto; max-height: 74vh;
-  object-fit: contain; margin: 0 auto;
-}
-.mg-lb-caption {
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px;
-  color: #e8eefb;
-}
-.mg-lb-cat {
-  display: inline-block;
-  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
-  color: #8fb6ff;
-}
-.mg-lb-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.mg-lb-ghost {
-  appearance: none; cursor: pointer; font: inherit; font-size: 0.8rem; font-weight: 600;
-  padding: 9px 16px; border-radius: 999px; text-decoration: none;
-  background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.24); color: #fff;
-  transition: background 0.2s ease, transform 0.2s ease;
-}
-.mg-lb-ghost:hover { background: rgba(255, 255, 255, 0.2); transform: translateY(-1px); }
-
-.mg-lb-close, .mg-lb-nav {
-  position: absolute; z-index: 3;
-  width: 52px; height: 52px; border-radius: 50%;
-  display: grid; place-items: center; cursor: pointer;
-  background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.24);
-  color: #fff; padding: 0;
-  transition: background 0.2s ease, transform 0.25s ease;
-}
-.mg-lb-close svg, .mg-lb-nav svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; }
-.mg-lb-close:hover, .mg-lb-nav:hover { background: var(--blue); transform: scale(1.06); }
-.mg-lb-close { top: 22px; right: 22px; }
-.mg-lb-nav { top: 50%; margin-top: -26px; }
-.mg-lb-prev { left: 20px; }
-.mg-lb-next { right: 20px; }
-
-.mg-lb-strip {
-  position: absolute; left: 0; right: 0; bottom: 20px;
-  display: flex; justify-content: center; gap: 8px;
-  padding: 0 60px; overflow-x: auto; scrollbar-width: none;
-}
-.mg-lb-strip::-webkit-scrollbar { display: none; }
-.mg-lb-thumb {
-  position: relative; flex: 0 0 auto;
-  width: 74px; height: 52px; padding: 0; cursor: pointer;
-  border-radius: 10px; overflow: hidden;
-  border: 2px solid rgba(255, 255, 255, 0.18);
-  opacity: 0.55;
-  transition: opacity 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
-}
-.mg-lb-thumb img { object-fit: cover; }
-.mg-lb-thumb:hover { opacity: 0.9; transform: translateY(-2px); }
-.mg-lb-thumb.is-active { opacity: 1; border-color: var(--blue); transform: translateY(-2px); }
-
-@keyframes mg-fade { from { opacity: 0; } to { opacity: 1; } }
-@keyframes mg-pop {
-  from { opacity: 0; transform: translateY(22px) scale(0.94); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+/* A device with no pointer has no hover to wait for, so the details are always
+   shown rather than being unreachable on a phone. */
+@media (hover: none) {
+  .mg-tile-scrim { opacity: 1; }
+  .mg-tile-meta { transform: translateY(0); }
 }
 
 @media (max-width: 1100px) {
@@ -1322,36 +1247,18 @@ h1,h2,h3{overflow-wrap:break-word}
 }
 @media (max-width: 900px) {
   .mg-content { padding: 64px 0 78px; }
-  .mg-lightbox { padding: 22px 20px 104px; }
-  .mg-lb-nav { top: auto; bottom: 84px; margin-top: 0; }
-  .mg-lb-prev { left: 18px; }
-  .mg-lb-next { right: 18px; }
-  .mg-lb-close { top: 16px; right: 16px; }
 }
 @media (max-width: 700px) {
   .mg-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
   .mg-head { margin-bottom: 26px; }
-  .mg-lb-thumb { width: 58px; height: 42px; }
 }
 @media (max-width: 560px) {
   .mg-content { padding: 48px 0 62px; }
-  .mg-lb-media { max-height: 58vh; }
+  .mg-tile { aspect-ratio: 3 / 4; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .mg-tile, .mg-tile-media, .mg-tile-meta, .mg-play, .mg-lb-figure { animation: none !important; transition: none !important; }
-  .mg-play::after { animation: none; }
+  .mg-tile, .mg-tile-media, .mg-tile-meta { animation: none !important; transition: none !important; }
 }
-
-.mg-lb-cta {
-  align-self: center; display: inline-flex; align-items: center; gap: 10px;
-  padding: 13px 26px; border-radius: 999px; text-decoration: none;
-  background: linear-gradient(135deg, #833ab4, #fd1d1d 55%, #fcb045);
-  color: #fff; font-size: 0.88rem; font-weight: 700; letter-spacing: 0.01em;
-  box-shadow: 0 16px 40px rgba(131, 58, 180, 0.35);
-  transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.25s ease;
-}
-.mg-lb-cta svg { width: 20px; height: 20px; fill: currentColor; }
-.mg-lb-cta:hover { transform: translateY(-2px); filter: saturate(1.1); box-shadow: 0 22px 52px rgba(131, 58, 180, 0.45); }
 
 .ip-body { max-width: 74ch; margin: 0 0 8px; }
 .ip-body p {
@@ -1962,12 +1869,17 @@ h1,h2,h3{overflow-wrap:break-word}
   .ip-pdf-card:hover { transform: none; }
 }
 
-/* ---------- scroll reveal (shared) ---------- */
-.reveal {
+/* ---------- scroll reveal (shared) ----------
+   Only hides an element when something is actually going to reveal it.
+   Without this guard, `.reveal` on a page with no IntersectionObserver
+   (components/Reveal.tsx, or HomePage's own effect) stays at opacity 0
+   forever, which reads as a blank white box rather than a missing image.
+   `.is-in` is what Reveal.tsx adds. */
+.reveal-enabled .reveal {
   opacity: 0; transform: translateY(28px);
   transition: opacity 0.7s ease, transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.reveal.is-in { opacity: 1; transform: none; }
+.reveal-enabled .reveal.is-in { opacity: 1; transform: none; }
 
 /* ---------- campus life ---------- */
 .cl-intro-grid {
@@ -2760,18 +2672,29 @@ h1,h2,h3{overflow-wrap:break-word}
 
 /* ===========================================================================
    Flash news bar
-   Sits above the header, full width. The track is two identical copies of the
-   notice list and is translated by exactly -50%, so the loop has no visible
-   seam and needs no JavaScript.
+   Full width, below the header. The track holds the notice list repeated enough
+   times to be wider than the bar, and one cycle translates it by exactly one
+   group width (--flash-shift, measured). Each group carries its own trailing
+   gap, so the repeat lands back on the start position: no seam, and a notice
+   always enters from the right as the one before it leaves on the left.
    =========================================================================== */
 .flash {
   --flash-gap: 2.25rem;
-  --flash-tag-w: 5.75rem;
+  --flash-tag-w: 6.25rem;
   position: relative;
-  z-index: 60;
+  /* Below the sticky topbar (z-index 50) so the header covers this strip as it
+     scrolls away, instead of the strip sliding over the header. */
+  z-index: 40;
   background: linear-gradient(90deg, var(--terracotta, #b4552f), #8f3f22);
   color: #fff;
-  font-size: 13px;
+  font-size: 15.5px;
+}
+/*
+ * No notices yet. The bar stays in the layout as an empty strip so it does not
+ * jump when the first notice arrives.
+ */
+.flash[data-empty="true"] {
+  min-height: 44px;
 }
 .flashInner {
   display: flex;
@@ -2787,15 +2710,15 @@ h1,h2,h3{overflow-wrap:break-word}
   gap: 0.4rem;
   margin: 0;
   padding-right: 0.85rem;
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   white-space: nowrap;
 }
 .flashDot {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: #ffd9c2;
   animation: flashPulse 1.8s ease-in-out infinite;
@@ -2805,23 +2728,39 @@ h1,h2,h3{overflow-wrap:break-word}
   flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
-  /* Softens the cut-off text at both ends instead of chopping it. */
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 1.75rem);
-  mask-image: linear-gradient(90deg, transparent, #000 1.75rem);
+  /* Softens the cut-off text at both ends instead of chopping it: fading in as
+     it enters on the right, fading out as it leaves on the left. */
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 1.75rem,
+    #000 calc(100% - 1.75rem),
+    transparent
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 1.75rem,
+    #000 calc(100% - 1.75rem),
+    transparent
+  );
 }
 .flashTrack {
   display: flex;
-  gap: var(--flash-gap);
   width: max-content;
-  animation: flashScroll var(--flash-duration, 30s) linear infinite;
+  animation: flashScroll var(--flash-duration, 18s) linear infinite;
   will-change: transform;
 }
 .flashGroup {
   display: flex;
   flex: 0 0 auto;
   gap: var(--flash-gap);
+  /* The spacing between groups belongs to the end of each group, not to a gap
+     on the track. That makes one group a whole, self-contained tile, which is
+     what lets the track travel by exactly one group width and still restart on
+     the same pixel. */
+  padding-right: var(--flash-gap);
   margin: 0;
-  padding: 0;
   list-style: none;
 }
 .flashItem {
@@ -2832,8 +2771,9 @@ h1,h2,h3{overflow-wrap:break-word}
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  padding: 0.45rem 0;
+  padding: 0.55rem 0;
   color: inherit;
+  font-weight: 500;
   text-decoration: none;
   white-space: nowrap;
 }
@@ -2842,7 +2782,7 @@ a.flashLink:hover .flashText {
   text-underline-offset: 3px;
 }
 .flashGo {
-  font-size: 12px;
+  font-size: 14px;
   opacity: 0.75;
 }
 /* A link that points somewhere should say so, not just look different. */
@@ -2859,7 +2799,8 @@ a.flashLink:hover .flashGo {
     transform: translateX(0);
   }
   to {
-    transform: translateX(-50%);
+    /* One whole group, measured by the component. */
+    transform: translateX(var(--flash-shift, -50%));
   }
 }
 @keyframes flashPulse {
@@ -2879,6 +2820,23 @@ a.flashLink:hover .flashGo {
     padding-right: 0.6rem;
     font-size: 10px;
   }
+  /* Two fades would eat too much of a narrow bar. */
+  .flashViewport {
+    -webkit-mask-image: linear-gradient(
+      90deg,
+      transparent,
+      #000 0.85rem,
+      #000 calc(100% - 0.85rem),
+      transparent
+    );
+    mask-image: linear-gradient(
+      90deg,
+      transparent,
+      #000 0.85rem,
+      #000 calc(100% - 0.85rem),
+      transparent
+    );
+  }
 }
 /* No motion: let people scroll the notices themselves instead. */
 @media (prefers-reduced-motion: reduce) {
@@ -2893,5 +2851,215 @@ a.flashLink:hover .flashGo {
     overflow-x: auto;
     -webkit-mask-image: none;
     mask-image: none;
+  }
+}
+
+/* ===========================================================================
+   Welcome popup
+   First-visit modal shown once per browser per popup. Uses a blur-backed
+   overlay and rises into view. Matches the existing dialog conventions
+   (pg-overlay/pg-modal) while being scoped to the welcome component.
+   =========================================================================== */
+.wc-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(4, 19, 38, 0.58);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  animation: wc-fade 0.22s ease both;
+}
+
+.wc-modal {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  /* Sized to the message rather than filling the screen: a small notice should
+     read as a welcome, not as a takeover of the home page. */
+  width: min(480px, 100%);
+  max-height: 92vh;
+  overflow-y: auto;
+  border-radius: var(--radius-md);
+  background: #fff;
+  box-shadow: 0 40px 90px rgba(4, 19, 38, 0.38);
+  animation: wc-rise 0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* The dialog takes focus when it opens, so it needs no visible ring itself. */
+.wc-modal:focus {
+  outline: none;
+}
+
+.wc-media {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  background: #f2f6fb;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.wc-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(4, 19, 38, 0.08) 0%,
+    rgba(4, 19, 38, 0) 70%
+  );
+  pointer-events: none;
+}
+
+.wc-media img {
+  display: block;
+  width: 100%;
+  height: clamp(140px, 22vw, 190px);
+  object-fit: cover;
+}
+
+.wc-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(12px, 1.6vw, 16px);
+  padding: clamp(20px, 3vw, 28px);
+}
+
+.wc-eyebrow {
+  margin: 0;
+}
+
+.wc-title {
+  margin: 0;
+  font-size: clamp(21px, 2.4vw, 27px);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.7px;
+  color: var(--navy);
+}
+
+.wc-body {
+  margin: 0;
+  max-width: 48ch;
+  font-size: clamp(13.5px, 1.6vw, 15px);
+  line-height: 1.75;
+}
+
+.wc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: clamp(10px, 2vw, 14px);
+  margin-top: clamp(4px, 1vw, 10px);
+}
+
+.wc-button {
+  min-height: 44px;
+  padding: 12px 20px;
+  font-size: 12.5px;
+  letter-spacing: 0.2px;
+}
+
+/* The "Close" text button. Same red as the X so every way out of the popup is
+   equally obvious; the primary call to action stays blue beside it. */
+.wc-secondary {
+  min-height: 44px;
+  padding: 12px 20px;
+  border: 1px solid #c0392b;
+  background: #e74c3c;
+  color: #fff;
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.wc-secondary:hover {
+  background: #c0392b;
+  border-color: #a93226;
+  color: #fff;
+  transform: none;
+  box-shadow: none;
+}
+
+.wc-secondary:active {
+  transform: translateY(1px);
+}
+
+.wc-secondary:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+@keyframes wc-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes wc-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Inset rather than full-bleed, so it still reads as a small welcome rather
+     than a sheet that has taken over the screen. */
+  .wc-overlay {
+    padding: 16px;
+    align-items: center;
+  }
+
+  .wc-modal {
+    width: 100%;
+    max-height: 94vh;
+    border-radius: 18px;
+    animation: wc-rise-mobile 0.26s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .wc-media img {
+    height: clamp(130px, 34vw, 170px);
+  }
+
+  .wc-content {
+    padding: clamp(18px, 5vw, 22px) clamp(18px, 5vw, 22px)
+      clamp(20px, 5vw, 24px);
+    padding-top: clamp(20px, 5vw, 24px);
+  }
+}
+
+@keyframes wc-rise-mobile {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wc-overlay,
+  .wc-modal {
+    animation: none;
+  }
+
+  .wc-secondary {
+    transition: none;
+  }
+
+  .wc-secondary:hover {
+    transform: none;
   }
 }

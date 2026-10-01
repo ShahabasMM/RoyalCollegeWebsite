@@ -13,6 +13,11 @@ type RevealProps = {
  * Fades and lifts its children into view the first time they enter the
  * viewport. Falls back to "always visible" when the visitor has asked for
  * reduced motion.
+ *
+ * The `reveal-enabled` class on <html> is what arms the hiding behaviour in
+ * app/globals.css. It is added here and removed on cleanup so a page with no
+ * Reveal on it never renders an invisible element, and so navigating away does
+ * not leave the class behind for the next page.
  */
 export default function Reveal({ children, delay = 0, className = "" }: RevealProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -22,12 +27,15 @@ export default function Reveal({ children, delay = 0, className = "" }: RevealPr
     const node = ref.current;
     if (!node) return;
 
+    const root = document.documentElement;
+    root.classList.add("reveal-enabled");
+
     if (
       typeof window.matchMedia === "function" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches
     ) {
       setShown(true);
-      return;
+      return () => root.classList.remove("reveal-enabled");
     }
 
     const observer = new IntersectionObserver(
@@ -43,7 +51,15 @@ export default function Reveal({ children, delay = 0, className = "" }: RevealPr
     );
 
     observer.observe(node);
-    return () => observer.disconnect();
+
+    return () => {
+      observer.disconnect();
+      // Only clear the flag if nothing else on the page is still revealing,
+      // otherwise unmounting one Reveal would blank every other one.
+      if (!document.querySelector(".reveal:not(.is-in)")) {
+        root.classList.remove("reveal-enabled");
+      }
+    };
   }, []);
 
   return (

@@ -320,11 +320,11 @@ export default function HomePage({
                 key={program.title}
               >
                 <div className="program-image">
-                  <Image
+                  <img
                     src={program.image}
                     alt={program.fullTitle}
-                    fill
-                    sizes="(max-width: 700px) 100vw, (max-width: 1100px) 50vw, 25vw"
+                    loading="lazy"
+                    decoding="async"
                   />
                   <span className="program-index">0{index + 1}</span>
                   <span className="program-arrow"><ArrowUpRight size={18} /></span>
@@ -450,11 +450,11 @@ export default function HomePage({
               <article className={`news-card reveal reveal-delay-${index + 1}`} key={item.title}>
                 <Link href="/news" className="news-image" aria-label={`Read ${item.title}`}>
                   {item.image ? (
-                    <Image
+                    <img
                       src={item.image}
                       alt={item.title}
-                      fill
-                      sizes="(max-width: 700px) 100vw, 33vw"
+                      loading="lazy"
+                      decoding="async"
                     />
                   ) : null}
                   <span className="news-image-arrow"><ArrowUpRight size={18} /></span>

@@ -3,7 +3,14 @@ import HomePage, {
   type HomeProgram,
   type HomeStat,
 } from "@/components/HomePage";
-import { getNews, getProgrammes, getStats, type SiteStat } from "@/lib/siteContent";
+import {
+  getNews,
+  getProgrammes,
+  getStats,
+  getWelcomePopup,
+  type SiteStat,
+} from "@/lib/siteContent";
+import WelcomePopup from "@/components/WelcomePopup";
 
 export const revalidate = 300;
 
@@ -87,10 +94,11 @@ function toHomeStats(stats: SiteStat[]): HomeStat[] {
 }
 
 export default async function Home() {
-  const [{ items }, programs, stats] = await Promise.all([
+  const [{ items }, programs, stats, welcomePopup] = await Promise.all([
     getNews(),
     loadPrograms(),
     getStats(),
+    getWelcomePopup(),
   ]);
 
   // A story is never dropped for a missing image: .news-image already has its
@@ -108,10 +116,13 @@ export default async function Home() {
   // Only fall back when the CMS has nothing usable, so a partly filled
   // news table shows exactly what was published rather than stale filler.
   return (
-    <HomePage
-      news={news.length > 0 ? news : FALLBACK_NEWS}
-      programs={programs}
-      stats={toHomeStats(stats)}
-    />
+    <>
+      <HomePage
+        news={news.length > 0 ? news : FALLBACK_NEWS}
+        programs={programs}
+        stats={toHomeStats(stats)}
+      />
+      {welcomePopup ? <WelcomePopup content={welcomePopup} /> : null}
+    </>
   );
 }

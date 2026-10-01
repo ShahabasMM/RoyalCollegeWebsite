@@ -236,6 +236,67 @@ function shortDate(value: unknown): string {
   });
 }
 
+export type SiteGalleryItem = {
+  id: string;
+  title: string;
+  description: string;
+  image: string;
+  imageAlt: string;
+  category: string;
+  /** Optional. When set the hover panel becomes a link to this. */
+  linkUrl: string | null;
+};
+
+type GalleryRow = {
+  id: string;
+  title: string;
+  description: string | null;
+  image: string | null;
+  image_alt: string | null;
+  category: string | null;
+  link_url: string | null;
+};
+
+/**
+ * Photographs for /campus/gallery, in the order staff set in the admin.
+ *
+ * Returns [] when the CMS is unreachable or nothing is published, so the page
+ * shows its own "being updated" message rather than an error or, worse, a
+ * fallback of Instagram posts that are no longer wanted.
+ */
+export async function getGallery(): Promise<SiteGalleryItem[]> {
+  const rows = await orderedRows<GalleryRow>("site_gallery", "display_order", true);
+
+  if (!rows) return [];
+
+  return rows
+    // A photo with no loadable image has nothing to show, so it is skipped
+    // rather than rendered as an empty tile.
+    .map((row) => {
+      const image = normaliseImageUrl(row.image);
+
+      return image ? { row, image } : null;
+    })
+    .filter((entry): entry is { row: GalleryRow; image: string } => entry !== null)
+    .map(({ row, image }) => {
+      const title = row.title.trim();
+
+      return {
+        id: row.id,
+        title,
+        description: row.description?.trim() ?? "",
+        image,
+        // Falls back to the title so every photo still has something to read
+        // aloud, which a photo with no alt text does not.
+        imageAlt: row.image_alt?.trim() || title,
+        category: row.category?.trim() || "Gallery",
+        // Only site-relative paths and http(s) links. A javascript: URL stored
+        // in the CMS must never become a clickable href.
+        linkUrl: safeHref(row.link_url),
+      };
+    });
+}
+
 /* ------------------------------------------------------------- getters */
 
 type ProgrammeRow = {
@@ -534,6 +595,119 @@ export async function getFlashNews(): Promise<SiteFlashNotice[]> {
       // stored in the CMS must never become a clickable href.
       linkUrl: safeHref(row.link_url),
     }));
+}
+
+export type SiteWelcomePopup = {
+  /**
+   * Identifies one popup. The browser remembers the id it closed, which is how
+   * the popup stays a once-only welcome: editing the popup keeps the same id and
+   * does not interrupt anyone who already dismissed it, while replacing it with
+   * a new popup produces a new id and greets every visitor again.
+   */
+  id: string;
+  eyebrow: string | null;
+  title: string;
+  description: string | null;
+  image: string | null;
+  imageAlt: string | null;
+  buttonLabel: string | null;
+  buttonUrl: string | null;
+  /**
+   * True means "first visit only", so a refresh will not bring the popup back.
+   * False means it appears on every visit and every refresh.
+   */
+  showOnce: boolean;
+};
+
+type WelcomePopupRow = {
+  id: string;
+  eyebrow: string | null;
+  title: string;
+  description: string | null;
+  image: string | null;
+  image_alt: string | null;
+  button_label: string | null;
+  button_url: string | null;
+  show_once: boolean | null;
+};
+
+function optionalText(value: string | null): string | null {
+  if (typeof value !== "string") return null;
+
+  const trimmed = value.trim();
+
+  return trimmed === "" ? null : trimmed;
+}
+
+/**
+ * The popup shown to first-time visitors on the home page.
+ *
+ * Returns null whenever there is nothing worth showing, which covers all three
+ * cases with one safe default: no popup configured, the popup still switched
+ * off in the admin, and the table or the database being unreachable. A welcome
+ * popup that cannot be read must leave the home page alone, never trap somebody
+ * on a page behind a broken dialog.
+ */
+export async function getWelcomePopup(): Promise<SiteWelcomePopup | null> {
+  const supabase = getClient();
+
+  if (!supabase) return null;
+
+  try {
+    const { data, error } = await supabase
+      .from("site_welcome_popup")
+      /*
+     * "*" rather than a column list, deliberately.
+     *
+     * A named column that the database does not have yet fails the whole query
+     * with 42703, which this getter then swallows into null - a popup that never
+     * appears and never says why. Reading every column instead means a column
+     * added after this code shipped is simply absent from the row, and the
+     * `showOnce` fallback below handles it.
+     */
+    .select("*")
+      .eq("is_published", true)
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !data) {
+      // Silent null is right in production: a popup that cannot be read must
+      // never take the home page down. But during development it is the reason
+      // a popup "does not appear", with nothing on screen to say so.
+      if (process.env.NODE_ENV !== "production" && error) {
+        console.warn("[welcome-popup] not shown:", error.message);
+      }
+
+      return null;
+    }
+
+    const title = optionalText(data.title);
+
+    // A popup with no title is a draft that somebody switched on early. Showing
+    // an untitled dialog over the home page would be worse than showing nothing.
+    if (!title) return null;
+
+    const buttonUrl = safeHref(data.button_url);
+    // A label pointing nowhere would trap the visitor in a dialog they can only
+    // escape by finding the X, so the button only exists when both halves are set.
+    const buttonLabel = buttonUrl ? optionalText(data.button_label) : null;
+
+    return {
+      id: data.id,
+      eyebrow: optionalText(data.eyebrow),
+      title,
+      description: optionalText(data.description),
+      image: normaliseImageUrl(data.image),
+      imageAlt: optionalText(data.image_alt),
+      buttonLabel,
+      buttonUrl: buttonLabel ? buttonUrl : null,
+      // The column arrived after this getter was first written, so treat a null
+      // as "show every time" rather than quietly reverting to once-only.
+      showOnce: Boolean(data.show_once),
+    };
+  } catch {
+    return null;
+  }
 }
 
 

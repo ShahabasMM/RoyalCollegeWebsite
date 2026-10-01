@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import PageHero from "@/components/PageHero";
 import { img } from "@/content/innerPageData";
@@ -26,13 +25,15 @@ export default async function News() {
           <div className="container ip-featured">
             <div className="ip-featured-media">
               {featured.image ? (
-                <Image
+                // Plain <img> rather than the Next image component. A CMS image
+                // can live on any host, and that component only serves the
+                // handful on its allowlist. Sizing lives in
+                // .ip-featured-media img, as with every other CMS image here.
+                <img
                   src={featured.image}
                   alt={featured.title}
-                  width={1200}
-                  height={800}
-                  sizes="(max-width: 900px) 100vw, 55vw"
-                  priority
+                  loading="eager"
+                  decoding="async"
                 />
               ) : (
                 <div className="ip-news-placeholder" aria-hidden="true" />
@@ -62,12 +63,11 @@ export default async function News() {
               {rest.map((item) => (
                 <article className="ip-news-card" key={item.title}>
                   {item.image ? (
-                    <Image
+                    <img
                       src={item.image}
                       alt={item.title}
-                      width={1000}
-                      height={700}
-                      sizes="(max-width: 560px) 100vw, (max-width: 900px) 50vw, 33vw"
+                      loading="lazy"
+                      decoding="async"
                     />
                   ) : (
                     <div className="ip-news-placeholder" aria-hidden="true" />

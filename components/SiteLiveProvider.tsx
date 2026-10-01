@@ -39,6 +39,12 @@ const PAGE_TABLES = [
   "site_addon_courses",
   "site_news",
   "site_pages",
+  // A `router.refresh()` re-renders the home page with the new popup. It still
+  // only appears to visitors who have not dismissed this popup's id yet.
+  "site_welcome_popup",
+  // Gallery photos are read by the /campus/gallery server component, so a
+  // refresh is what swaps a newly added photograph into the page.
+  "site_gallery",
 ] as const;
 
 /** Admin edits come in bursts, so collapse them into one refresh. */

@@ -42,9 +42,9 @@ export default async function RootLayout({
           flashNews={flashNews}
           programs={programs}
         >
-          <FlashNewsTicker />
-
           <Header />
+
+          <FlashNewsTicker />
 
           {children}
 
