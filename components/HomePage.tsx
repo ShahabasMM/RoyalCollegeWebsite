@@ -22,8 +22,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useEffect } from "react";
-import { useApplyEnabled } from "./SiteLiveProvider";
-import { APPLY_URL } from "@/content/innerPageData";
 
 export type HomeStat = {
   label: string;
@@ -67,35 +65,6 @@ const image = (id: string, width = 1600) =>
   `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${width}&q=85`;
 
 
-const gallery = [
-  {
-    image: "photo-1562774053-701939374585",
-    alt: "Royal College campus building",
-    label: "A place to belong",
-    className: "gallery-feature",
-  },
-  {
-    image: "photo-1521587760476-6c12a4b040da",
-    alt: "College library and study space",
-    label: "Curiosity lives here",
-  },
-  {
-    image: "photo-1517457373958-b7bdd4587205",
-    alt: "Students taking part in a college event",
-    label: "Find your people",
-  },
-  {
-    image: "photo-1546519638-68e109498ffc",
-    alt: "Students on a college sports field",
-    label: "Make memories",
-  },
-  {
-    image: "photo-1523240795612-9a054b0db644",
-    alt: "Students collaborating in a bright learning space",
-    label: "Think beyond",
-  },
-];
-
 const strengths = [
   {
     icon: Lightbulb,
@@ -123,7 +92,6 @@ export default function HomePage({
   programs?: HomeProgram[];
   stats?: HomeStat[];
 }) {
-  const applyEnabled = useApplyEnabled();
   useEffect(() => {
     const revealItems = document.querySelectorAll<HTMLElement>(".reveal");
     const root = document.documentElement;
@@ -185,16 +153,10 @@ export default function HomePage({
               Royal College of Arts &amp; Science brings together thoughtful
               teaching, a vibrant community and the confidence to build what comes next.
             </p>
-            <div className="hero-actions">
-              <Link className="btn btn-light" href="/academics">
-                Explore programs <ArrowRight size={17} />
-              </Link>
-              {applyEnabled ? (
-                <Link className="btn btn-ghost-light" href={APPLY_URL}>
-                  Apply now <ArrowUpRight size={17} />
-                </Link>
-              ) : null}
-            </div>
+            {/* No call to action in the hero by request: "Start your
+                application" and "Talk to admissions" in the admissions panel
+                are the only home page buttons, so the hero leads with copy
+                and the proof line instead. */}
             <div className="hero-proof">
               <div className="proof-avatars" aria-hidden="true">
                 <span>RC</span>
@@ -476,43 +438,6 @@ export default function HomePage({
         </div>
       </section>
 
-      <section className="section section-soft gallery-section" id="campus">
-        <div className="container">
-          <div className="section-head gallery-head reveal">
-            <div>
-              <div className="section-kicker">05 / Life on campus</div>
-              <h2>There is room for every version of you.</h2>
-            </div>
-            <div className="section-head-aside">
-              <p>Quiet corners, lively traditions and spaces made for becoming.</p>
-              <Link className="text-link" href="/campus/campus-life">
-                Explore campus life <ArrowRight size={17} />
-              </Link>
-            </div>
-          </div>
-          <div className="home-gallery">
-            {gallery.map((item, index) => (
-              <Link
-                className={`gallery-item ${item.className ?? ""} reveal reveal-delay-${(index % 3) + 1}`}
-                href="/campus/campus-life"
-                key={item.image}
-                aria-label={`${item.label} — view campus life`}
-              >
-                <Image
-                  src={image(item.image, 1200)}
-                  alt={item.alt}
-                  fill
-                  sizes="(max-width: 700px) 100vw, (max-width: 1000px) 50vw, 40vw"
-                />
-                <span className="gallery-overlay" />
-                <span className="gallery-label">{item.label}</span>
-                <span className="gallery-number">0{index + 1}</span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <section className="final-cta-section">
         <div className="container">
           <div className="final-cta reveal">
@@ -524,16 +449,8 @@ export default function HomePage({
               </h2>
               <p>Bring your questions. We&apos;ll help you find your direction.</p>
             </div>
-            <div className="final-cta-actions">
-              {applyEnabled ? (
-                <a className="btn btn-light" href={APPLY_URL}>
-                  Apply to Royal College <ArrowRight size={17} />
-                </a>
-              ) : null}
-              <Link className="text-link text-link-light" href="/contact">
-                Contact our team <ArrowUpRight size={17} />
-              </Link>
-            </div>
+            {/* Same reason as the hero: the admissions panel owns these calls
+                to action, so this closing section is copy only. */}
             <div className="final-cta-mark" aria-hidden="true">
               <span>RC</span>
               <span className="mark-line" />

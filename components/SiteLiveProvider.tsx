@@ -48,9 +48,9 @@ const PAGE_TABLES = [
 ] as const;
 
 /** Admin edits come in bursts, so collapse them into one refresh. */
-const REFRESH_DEBOUNCE_MS = 1200;
+const REFRESH_DEBOUNCE_MS = 400;
 /** Floor between refreshes, so a chatty table cannot loop the server. */
-const REFRESH_MIN_GAP_MS = 2500;
+const REFRESH_MIN_GAP_MS = 800;
 
 /**
  * How often to poll for changes.
@@ -63,7 +63,7 @@ const REFRESH_MIN_GAP_MS = 2500;
  *
  * It only runs while the tab is visible, and each tick is one small request.
  */
-const POLL_MS = 45000;
+const POLL_MS = 20000;
 
 /** Programme names for the footer, kept here so the footer stays in step. */
 export type LiveProgram = {

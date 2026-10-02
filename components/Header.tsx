@@ -94,6 +94,8 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const closeTimer = useRef<number | null>(null);
+  // Used to tell a click inside the header from one on the page behind it.
+  const headerRef = useRef<HTMLElement>(null);
 
   const clearCloseTimer = () => {
     if (closeTimer.current !== null) {
@@ -139,8 +141,25 @@ export default function Header() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  // A panel opened by click needs dismissing on a click elsewhere. Hover
+  // already closed it via onMouseLeave; now that a click can open it, a click
+  // on the page body has to as well, otherwise the panel hangs open over the
+  // content until the pointer happens to leave the header.
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!headerRef.current?.contains(event.target as Node)) {
+        clearCloseTimer();
+        setActiveMenu(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, []);
+
   return (
     <header
+      ref={headerRef}
       className="topbar"
       onMouseEnter={clearCloseTimer}
       onMouseLeave={scheduleClose}
@@ -199,17 +218,22 @@ export default function Header() {
                   aria-expanded={isActive}
                   aria-haspopup="true"
                   onClick={(event) => {
-                    if (isMobile()) {
-                      event.preventDefault();
-                      toggleMenu(menu.id);
-                    } else {
-                      closeMenus();
-                    }
+                    // Clicking a main item opens its submenu and never
+                    // navigates. The old behaviour sent people to a single
+                    // arbitrary page (About -> /about/about-college) and left
+                    // them wondering where the rest of the section had gone.
+                    // The link stays in the markup so the href still reaches a
+                    // meaningful page for crawlers and for middle-click, and
+                    // the mega panel carries a "View all" link for anyone who
+                    // does want the overview page.
+                    event.preventDefault();
+                    toggleMenu(menu.id);
                   }}
                   onKeyDown={(event) => {
-                    if (isMobile() && event.key === " ") {
+                    // Space and ArrowDown open the panel without scrolling.
+                    if (event.key === " " || event.key === "ArrowDown") {
                       event.preventDefault();
-                      toggleMenu(menu.id);
+                      openMenu(menu.id);
                     }
                   }}
                   onFocus={() => {

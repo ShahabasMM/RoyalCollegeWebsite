@@ -6,7 +6,13 @@ import { library } from "@/content/library";
 import { APPLY_URL } from "@/content/innerPageData";
 import { getSiteSettings } from "@/lib/siteContent";
 
-export const revalidate = 300;
+// Rendered on every request rather than from the static cache.
+//
+// This page reads the CMS, and a 300s revalidate window meant an admin edit
+// could sit invisible for up to five minutes even after router.refresh(): Next
+// answered from the static shell. force-dynamic makes the server ask Supabase
+// each time, which is what makes realtime updates actually appear.
+export const dynamic = "force-dynamic";
 
 export default async function LibraryPage() {
   const { applyEnabled } = await getSiteSettings();

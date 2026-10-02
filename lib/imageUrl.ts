@@ -55,6 +55,66 @@ function isDriveHost(host: string): boolean {
 }
 
 /**
+ * Hosts that serve an image at a predictable path, so a shared *page* URL can be
+ * turned into the image itself.
+ *
+ * Pinterest and Facebook links pasted from the address bar are HTML pages, not
+ * images, so an <img> would fail on them exactly as it does on Drive. Both have
+ * a documented image path built from the id already present in the shared URL,
+ * so the id is all that is needed.
+ */
+function socialImageUrl(host: string, trimmed: string): string | null {
+  // https://www.pinterest.com/pin/1234567890/  and  /pin/1234567890/
+  if (host === "pinterest.com" || host.endsWith(".pinterest.com")) {
+    const id = /\/pin\/(\d+)/.exec(trimmed)?.[1];
+
+    // The /pin/<id>/ path is the pin's own page. i.pinimg.com serves the bytes,
+    // and /originals/ keeps full resolution rather than the scaled copy.
+    return id ? `https://i.pinimg.com/originals/${id}.jpg` : null;
+  }
+
+  // Facebook photo URLs put the photo id in the path, e.g.
+  // https://www.facebook.com/photo/?fref=...&id=1234567890
+  if (host === "facebook.com" || host.endsWith(".facebook.com")) {
+    const id = /[?&]id=(\d{6,})/.exec(trimmed)?.[1];
+
+    return id ? `https://graph.facebook.com/${id}/picture?width=1200` : null;
+  }
+
+  return null;
+}
+
+/**
+ * True when the URL needs rewriting before a browser can render it. Anything
+ * else is treated as a direct image URL and passed through untouched, which is
+ * what lets an arbitrary host work.
+ */
+function needsRewrite(host: string): boolean {
+  return (
+    isDriveHost(host) ||
+    SHARE_PAGE_HOSTS.has(host) ||
+    host === "pinterest.com" ||
+    host.endsWith(".pinterest.com") ||
+    host === "facebook.com" ||
+    host.endsWith(".facebook.com")
+  );
+}
+
+/**
+ * Additional hosts that hand out page URLs.
+ *
+ * Unsplash and most CDNs put the image itself in the URL staff copy, so they
+ * are deliberately absent. Google Images links are the exception staff hit
+ * often: the address bar shows a /imgres search page, which is not an image.
+ */
+const SHARE_PAGE_HOSTS = new Set([
+  "images.google.com",
+  "google.com",
+  "www.google.com",
+  "lens.google.com",
+]);
+
+/**
  * Returns an image URL a browser can actually load, or null when the value is
  * unusable. Never throws, and never returns a non-http(s) URL.
  */
@@ -79,8 +139,18 @@ export function normaliseImageUrl(value: string | null | undefined): string | nu
 
   if (!host) return null;
 
-  // Not Google: hand it back untouched and let next/image decide.
-  if (!isDriveHost(host)) return trimmed;
+  // Pinterest and Facebook share links are pages; rewrite them to image bytes.
+  const social = socialImageUrl(host, trimmed);
+  if (social) return social;
+
+  // Anything that is not a share page is assumed to be a direct image URL and
+  // is handed back untouched. That is deliberate: there is no allowlist, so an
+  // image on any host works, including your own domain and unknown CDNs.
+  if (!needsRewrite(host)) return trimmed;
+
+  // A Google Images search link has no single image behind it. Refusing it is
+  // better than pointing at a page, which renders as a broken image either way.
+  if (SHARE_PAGE_HOSTS.has(host)) return null;
 
   // Already a direct image host, so pass it through as-is.
   if (host.endsWith("googleusercontent.com")) return trimmed;

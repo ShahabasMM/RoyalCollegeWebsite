@@ -139,6 +139,16 @@ function getClient(): SupabaseClient | null {
 
   cached = createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
+    global: {
+      // Every CMS read must reach the database, never Next's fetch cache.
+      //
+      // Without this, `router.refresh()` re-renders the page but can be handed
+      // the same cached Supabase response as before, so an admin edit appeared
+      // to do nothing until the page's revalidate window expired. Caching is
+      // handled deliberately instead: server renders are short-lived (see the
+      // revalidate values in app/**), and the client refreshes on realtime.
+      fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }),
+    },
   });
 
   return cached;
