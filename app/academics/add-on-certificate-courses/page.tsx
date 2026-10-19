@@ -1,7 +1,17 @@
+import type { Metadata } from "next";
 import AddOnCourses from "@/components/AddOnCourses";
 import PageHero from "@/components/PageHero";
 import { img } from "@/content/innerPageData";
 import { getAddOnCourses } from "@/lib/siteContent";
+
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({
+  title: "Add-on Certificate Courses",
+  description:
+    "Browse short, Kerala government approved add-on certificate courses at Royal College of Arts & Science, Thrithala, with course codes, duration and mode of study.",
+  path: "/academics/add-on-certificate-courses",
+});
 
 // Rendered on every request rather than from the static cache.
 //

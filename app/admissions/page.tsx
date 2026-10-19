@@ -1,6 +1,16 @@
+import type { Metadata } from "next";
 import InnerPage from "@/components/InnerPage";
 import { buildPage, img } from "@/content/innerPageData";
 import type { InnerPageData } from "@/components/InnerPage";
+
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({
+  title: "Admissions",
+  description:
+    "Admissions to Royal College of Arts & Science, Thrithala are open. Learn about eligibility, the application process, fee structure and the University of Calicut admission schedule.",
+  path: "/admissions",
+});
 
 const steps = [
   {

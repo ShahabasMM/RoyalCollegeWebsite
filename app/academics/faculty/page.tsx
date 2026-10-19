@@ -1,7 +1,17 @@
+import type { Metadata } from "next";
 import { Fragment } from "react";
 import PageHero from "@/components/PageHero";
 import { img } from "@/content/innerPageData";
 import { getFacultyGroups } from "@/lib/siteContent";
+
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({
+  title: "Faculty",
+  description:
+    "Meet the faculty at Royal College of Arts & Science, Thrithala, organised by department, with the heads of department for Computer Applications, Commerce, English, Malayalam and Arabic.",
+  path: "/academics/faculty",
+});
 
 // Rendered on every request rather than from the static cache.
 //

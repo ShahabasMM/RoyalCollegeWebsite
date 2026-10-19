@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import HomePage, {
   type HomeNewsItem,
   type HomeProgram,
@@ -11,6 +12,7 @@ import {
   type SiteStat,
 } from "@/lib/siteContent";
 import WelcomePopup from "@/components/WelcomePopup";
+import { DEFAULT_DESCRIPTION, OG_IMAGE_ALT, OG_IMAGE_PATH, SCHOOL_NAME, pageMetadata } from "@/lib/seo";
 
 // Rendered on every request rather than from the static cache.
 //
@@ -19,6 +21,20 @@ import WelcomePopup from "@/components/WelcomePopup";
 // answered from the static shell. force-dynamic makes the server ask Supabase
 // each time, which is what makes realtime updates actually appear.
 export const dynamic = "force-dynamic";
+
+// The homepage opts out of the root title template with `absolute`, because
+// appending " | Royal College of Arts & Science, Thrithala" to a title that
+// already reads "Royal College of Arts & Science, Thrithala | Kerala" would
+// repeat the brand. pageMetadata is still used for canonical, robots and OG.
+export const metadata: Metadata = {
+  ...pageMetadata({
+    title: `${SCHOOL_NAME}, Thrithala`,
+    description: DEFAULT_DESCRIPTION,
+    path: "/",
+    imageAlt: OG_IMAGE_ALT,
+  }),
+  title: { absolute: `${SCHOOL_NAME}, Thrithala | Kerala` },
+};
 
 /** The CMS stores absolute image URLs; the card needs a narrower crop. */
 function cardImage(url: string): string {

@@ -10,6 +10,12 @@ import {
 } from "@/content/addOnCourses";
 import { faculty as fallbackFaculty, type FacultyMember } from "@/content/faculty";
 import { programmes as fallbackProgrammes, type Programme } from "@/content/programmes";
+import {
+  isUsableHref,
+  studentZoneMenu as fallbackStudentZoneMenu,
+  type StudentZoneMenu,
+} from "@/content/studentZoneMenu";
+import { buildStudentZoneItems } from "./studentZoneMenuBuild";
 
 import type { InnerPdf } from "@/components/InnerPage";
 
@@ -126,7 +132,14 @@ const DEPARTMENT_ORDER = ["Commerce", "English", "Malayalam", "Arabic"];
 
 let cached: SupabaseClient | null | undefined;
 
-function getClient(): SupabaseClient | null {
+/**
+ * The shared anon Supabase client for every public CMS read.
+ *
+ * Exported so the Student Zone content layer (lib/studentZoneContent.ts) reuses
+ * one client, one no-store fetch policy and one null-means-unconfigured
+ * contract, rather than each module building its own.
+ */
+export function getPublicClient(): SupabaseClient | null {
   if (cached !== undefined) return cached;
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -164,7 +177,7 @@ function getClient(): SupabaseClient | null {
  * everything, so the CMS could never actually empty a section.
  */
 async function publishedRows<T>(table: string): Promise<T[] | null> {
-  const supabase = getClient();
+  const supabase = getPublicClient();
 
   if (!supabase) return null;
 
@@ -190,7 +203,7 @@ async function orderedRows<T>(
   ascending = false,
   tiebreaker = "created_at",
 ) {
-  const supabase = getClient();
+  const supabase = getPublicClient();
 
   if (!supabase) return null;
 
@@ -255,6 +268,8 @@ export type SiteGalleryItem = {
   category: string;
   /** Optional. When set the hover panel becomes a link to this. */
   linkUrl: string | null;
+  isInstagramSource: boolean;
+  instagramEmbedUrl: string | null;
 };
 
 type GalleryRow = {
@@ -266,6 +281,16 @@ type GalleryRow = {
   category: string | null;
   link_url: string | null;
 };
+
+function instagramEmbedUrl(value: string | null): string | null {
+  const match = String(value ?? "").match(
+    /^https?:\/\/(?:www\.)?(?:instagram\.com|instagr\.am)\/(p|reel|tv)\/([A-Za-z0-9_-]+)\/?(?:[?#].*)?$/i,
+  );
+
+  return match
+    ? `https://www.instagram.com/${match[1].toLowerCase()}/${match[2]}/embed/`
+    : null;
+}
 
 /**
  * Photographs for /campus/gallery, in the order staff set in the admin.
@@ -280,15 +305,17 @@ export async function getGallery(): Promise<SiteGalleryItem[]> {
   if (!rows) return [];
 
   return rows
-    // A photo with no loadable image has nothing to show, so it is skipped
-    // rather than rendered as an empty tile.
+    // Instagram permalinks use Instagram's official embed; direct image URLs
+    // continue to use a normal image element.
     .map((row) => {
-      const image = normaliseImageUrl(row.image);
+      const instagram = instagramEmbedUrl(row.link_url) ?? instagramEmbedUrl(row.image);
+      const isInstagramSource = Boolean(instagram);
+      const image = instagram ? "" : normaliseImageUrl(row.image);
 
-      return image ? { row, image } : null;
+      return image || instagram ? { row, image, isInstagramSource, instagram } : null;
     })
-    .filter((entry): entry is { row: GalleryRow; image: string } => entry !== null)
-    .map(({ row, image }) => {
+    .filter((entry): entry is { row: GalleryRow; image: string; isInstagramSource: boolean; instagram: string | null } => entry !== null)
+    .map(({ row, image, isInstagramSource, instagram }) => {
       const title = row.title.trim();
 
       return {
@@ -302,7 +329,11 @@ export async function getGallery(): Promise<SiteGalleryItem[]> {
         category: row.category?.trim() || "Gallery",
         // Only site-relative paths and http(s) links. A javascript: URL stored
         // in the CMS must never become a clickable href.
-        linkUrl: safeHref(row.link_url),
+        // Instagram's own embed UI includes account/profile links, so an
+        // Instagram destination remains stored but is not exposed as a tile link.
+        linkUrl: isInstagramSource ? null : safeHref(row.link_url),
+        isInstagramSource,
+        instagramEmbedUrl: instagram,
       };
     });
 }
@@ -364,7 +395,7 @@ const FALLBACK_STATS: SiteStat[] = [
 export async function getStats(): Promise<SiteStat[]> {
   const rows = await publishedRows<StatRow>("site_stat");
 
-  if (!rows) return FALLBACK_STATS;
+  if (!rows) return withVisitorsStat(FALLBACK_STATS);
 
   const stats = rows
     .filter((row) => row.label && row.value)
@@ -376,7 +407,34 @@ export async function getStats(): Promise<SiteStat[]> {
     }));
 
   // A partly filled table should show what was entered, not stale filler.
-  return stats.length > 0 ? stats : FALLBACK_STATS;
+  return withVisitorsStat(stats.length > 0 ? stats : FALLBACK_STATS);
+}
+
+/**
+ * Swaps the "Faculty mentors" card for the live "Visitors" card.
+ *
+ * The visitor total is not CMS content, so it is not stored in site_stat; it
+ * comes from this site's own counter (lib/visitors.ts) and is filled in on the
+ * client by VisitorStat. The CMS row is only used to decide *where* the card
+ * sits, which is what keeps the four-column stat bar intact. Matching the
+ * label, with the faculty icon as a fallback, works whether the value came from
+ * the CMS or the hardcoded defaults.
+ */
+function withVisitorsStat(stats: SiteStat[]): SiteStat[] {
+  const facultyIndex = stats.findIndex(
+    (stat) => /faculty/i.test(stat.label) || stat.iconKey === "graduation",
+  );
+
+  if (facultyIndex === -1) return stats;
+
+  const visitors: SiteStat = {
+    label: "Visitors",
+    value: "",
+    suffix: "",
+    iconKey: "users",
+  };
+
+  return stats.map((stat, index) => (index === facultyIndex ? visitors : stat));
 }
 
 type DepartmentRow = {
@@ -659,7 +717,7 @@ function optionalText(value: string | null): string | null {
  * on a page behind a broken dialog.
  */
 export async function getWelcomePopup(): Promise<SiteWelcomePopup | null> {
-  const supabase = getClient();
+  const supabase = getPublicClient();
 
   if (!supabase) return null;
 
@@ -736,7 +794,7 @@ const SETTINGS_ID = "00000000-0000-0000-0000-0000000000ff";
  * failure here is "on" rather than "off".
  */
 export async function getSiteSettings(): Promise<SiteSettings> {
-  const supabase = getClient();
+  const supabase = getPublicClient();
 
   if (!supabase) return { applyEnabled: true };
 
@@ -752,5 +810,155 @@ export async function getSiteSettings(): Promise<SiteSettings> {
     return { applyEnabled: Boolean(data.apply_enabled) };
   } catch {
     return { applyEnabled: true };
+  }
+}
+
+/* ==========================================================================
+   Student Zone navigation (CMS-managed)
+
+   The menu lives in `site_menu_items`, one row per link. Until the table is
+   created and seeded, `getStudentZoneMenu` returns the typed fallback in
+   content/studentZoneMenu.ts, so the public header never depends on the CMS
+   being set up. A table with no rows at all is also "not configured" and keeps
+   the fallback — that is the state the schema ships in, and blanking the
+   header dropdown because a migration ran would be a regression. Once rows
+   exist, staff are in full control: unpublished rows are filtered out, so
+   switching every item off really does empty the menu.
+
+   The full schema, RLS policies and the RoyalAdmins integration are described
+   in docs/student-zone-cms-contract.md. No production schema is created here.
+   ========================================================================== */
+
+type MenuItemRow = {
+  id: string;
+  menu_key: string | null;
+  label: string | null;
+  href: string | null;
+  external_url: string | null;
+  display_order: number | null;
+  is_published: boolean | null;
+};
+
+/** The menu key this site reads from `site_menu_items`. */
+export const STUDENT_ZONE_MENU_KEY = "student_zone";
+
+/**
+ * The Student Zone menu, from the CMS when available and the typed fallback
+ * otherwise.
+ *
+ * Returns the fallback for every "not configured" case: no env, missing table,
+ * query error, and — importantly — a table with no rows at all for this menu.
+ * An empty table is exactly what the schema ships with, so treating it as
+ * "show nothing" would blank the header dropdown the moment the migration is
+ * applied and before staff have entered anything.
+ *
+ * Once rows exist, staff stay in full control: unpublished rows are filtered
+ * out, so switching every item off really does empty the menu.
+ */
+export async function getStudentZoneMenu(): Promise<StudentZoneMenu> {
+  const supabase = getPublicClient();
+
+  if (!supabase) return fallbackStudentZoneMenu;
+
+  try {
+    // Deliberately unfiltered: the row count tells us whether the CMS has
+    // ever been configured for this menu, which the published-only query
+    // cannot (an all-unpublished menu and an empty table look identical).
+    const { data, error } = await supabase
+      .from("site_menu_items")
+      .select("*")
+      .eq("menu_key", STUDENT_ZONE_MENU_KEY)
+      .order("display_order", { ascending: true });
+
+    if (error) return fallbackStudentZoneMenu;
+    if (!Array.isArray(data)) return fallbackStudentZoneMenu;
+
+    // Nothing has ever been configured: keep the site's own links rather than
+    // emptying the navigation.
+    if (data.length === 0) return fallbackStudentZoneMenu;
+
+    const items = buildStudentZoneItems(
+      (data as MenuItemRow[]).filter((row) => row.is_published !== false),
+    );
+
+    return { ...fallbackStudentZoneMenu, items };
+  } catch {
+    return fallbackStudentZoneMenu;
+  }
+}
+
+/* ==========================================================================
+   Student Zone resources (Prospectus, Question Bank)
+
+   Downloadable documents staff publish for students. Same philosophy as the
+   menu: read `site_student_resources` when it exists, otherwise return an empty
+   list so the page shows a deliberate empty state. No document is invented.
+   ========================================================================== */
+
+export type StudentResource = {
+  id: string;
+  title: string;
+  description: string;
+  label: string;
+  /** Internal route or absolute http(s) URL to the document or folder. */
+  url: string;
+  /** True for http(s) destinations, so the card can open a new tab. */
+  external: boolean;
+  /** Optional cover/preview image (used by magazine editions). */
+  image: string | null;
+  /** Optional edition year (used by magazine editions). */
+  year: string | null;
+};
+
+export type StudentResourceKind = "prospectus" | "question-bank" | "magazine";
+
+type ResourceRow = {
+  id: string;
+  kind: string | null;
+  title: string | null;
+  description: string | null;
+  label: string | null;
+  url: string | null;
+  image: string | null;
+  year: string | null;
+  display_order: number | null;
+  is_published: boolean | null;
+};
+
+export async function getStudentResources(
+  kind: StudentResourceKind,
+): Promise<StudentResource[]> {
+  const supabase = getPublicClient();
+
+  if (!supabase) return [];
+
+  try {
+    const { data, error } = await supabase
+      .from("site_student_resources")
+      .select("*")
+      .eq("kind", kind)
+      .eq("is_published", true)
+      .order("display_order", { ascending: true });
+
+    if (error || !Array.isArray(data)) return [];
+
+    return (data as ResourceRow[])
+      .filter((row): row is ResourceRow & { title: string; url: string } =>
+        Boolean(row.title?.trim()) && Boolean(isUsableHref(row.url)),
+      )
+      .map((row) => ({
+        id: row.id,
+        title: row.title.trim(),
+        description: row.description?.trim() ?? "",
+        label: row.label?.trim() || "Document",
+        url: row.url.trim(),
+        // safeHref / isUsableHref only allow site-relative paths and http(s)
+        // links, so anything not starting with "/" is an external URL.
+        external: !row.url.trim().startsWith("/"),
+        image: normaliseImageUrl(row.image),
+        year: row.year?.trim() || null,
+      }));
+  } catch {
+    return [];
   }
 }

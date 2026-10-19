@@ -1,6 +1,8 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import InnerPage from "@/components/InnerPage";
+import InnerPage, { type InnerPageData } from "@/components/InnerPage";
 import { aboutPages } from "@/content/aboutPages";
+import { breadcrumbJsonLd, descriptionFrom, pageMetadata } from "@/lib/seo";
 
 type PageParams = {
   params: Promise<{ slug: string }>;
@@ -8,6 +10,27 @@ type PageParams = {
 
 export function generateStaticParams() {
   return Object.keys(aboutPages).map((slug) => ({ slug }));
+}
+
+/**
+ * Each About page derives its metadata from the content entry itself, so a new
+ * slug is covered the moment it is added to content/aboutPages.ts. heroLead is
+ * already written as a one-line summary of the page, which is exactly what a
+ * meta description should be.
+ */
+export async function generateMetadata({ params }: PageParams): Promise<Metadata> {
+  const { slug } = await params;
+  const page = aboutPages[slug];
+
+  if (!page) {
+    return { title: "Page not found" };
+  }
+
+  return pageMetadata({
+    title: page.title,
+    description: descriptionFrom(page.heroLead),
+    path: `/about/${slug}`,
+  });
 }
 
 export default async function AboutDestination({ params }: PageParams) {
@@ -18,5 +41,5 @@ export default async function AboutDestination({ params }: PageParams) {
     notFound();
   }
 
-  return <InnerPage data={page} />;
+  return <InnerPage data={page} crumbs={[{ name: "About", path: "/about/about-college" }]} />;
 }

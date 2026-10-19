@@ -1,5 +1,15 @@
+import type { Metadata } from "next";
 import PageHero from "@/components/PageHero";
 import { img } from "@/content/innerPageData";
+
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({
+  title: "Privacy Policy",
+  description:
+    "How Royal College of Arts & Science, Thrithala collects, uses and protects the information you share with us.",
+  path: "/privacy",
+});
 
 const points = [
   {

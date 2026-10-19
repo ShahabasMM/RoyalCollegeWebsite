@@ -1,7 +1,17 @@
+import type { Metadata } from "next";
 import { BookOpen, Calculator, Feather, Globe, type LucideIcon } from "lucide-react";
 import PageHero from "@/components/PageHero";
 import { img } from "@/content/innerPageData";
 import { getDepartments } from "@/lib/siteContent";
+
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({
+  title: "Departments",
+  description:
+    "Explore the departments at Royal College of Arts & Science, Thrithala, covering Computer Applications, Commerce, English, Malayalam and Arabic, with heads of department.",
+  path: "/academics/departments",
+});
 
 // Rendered on every request rather than from the static cache.
 //

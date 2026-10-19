@@ -1,5 +1,15 @@
+import type { Metadata } from "next";
 import PageHero from "@/components/PageHero";
 import { img } from "@/content/innerPageData";
+
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({
+  title: "Terms of Use",
+  description:
+    "Terms governing the use of the Royal College of Arts & Science, Thrithala website, including information accuracy, content ownership and external links.",
+  path: "/terms",
+});
 
 const cards = [
   {

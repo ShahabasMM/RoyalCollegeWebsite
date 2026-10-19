@@ -16,11 +16,14 @@ import {
   fetchContentStamp,
   fetchLiveApplyEnabled,
   fetchLiveFlashNews,
+  fetchLiveStudentZoneMenu,
   flashContentChanged,
+  menuContentChanged,
   pageContentChanged,
   type ContentStamp,
   type LiveFlashNotice,
 } from "@/lib/liveData";
+import { studentZoneMenu as fallbackStudentZoneMenu, type StudentZoneMenu } from "@/content/studentZoneMenu";
 
 /**
  * Tables the public site subscribes to.
@@ -29,7 +32,7 @@ import {
  * on it, so it could never deliver an event, and a public page has no business
  * holding a subscription to visitor enquiries.
  */
-const CHROME_TABLES = ["site_settings", "site_flash_news"] as const;
+const CHROME_TABLES = ["site_settings", "site_flash_news", "site_menu_items"] as const;
 
 const PAGE_TABLES = [
   "site_programmes",
@@ -77,12 +80,15 @@ type SiteLiveValue = {
   applyEnabled: boolean;
   flashNews: LiveFlashNotice[];
   programs: LiveProgram[];
+  /** CMS-managed Student Zone navigation (falls back to the typed config). */
+  studentZoneMenu: StudentZoneMenu;
 };
 
 const SiteLiveContext = createContext<SiteLiveValue>({
   applyEnabled: true,
   flashNews: [],
   programs: [],
+  studentZoneMenu: fallbackStudentZoneMenu,
 });
 
 /**
@@ -104,12 +110,14 @@ export function SiteLiveProvider({
   applyEnabled: initialApplyEnabled,
   flashNews: initialFlashNews,
   programs: initialPrograms,
+  studentZoneMenu: initialStudentZoneMenu,
   children,
 }: SiteLiveValue & { children: ReactNode }) {
   const router = useRouter();
   const [applyEnabled, setApplyEnabled] = useState(initialApplyEnabled);
   const [flashNews, setFlashNews] = useState(initialFlashNews);
-  const [programs, setPrograms] = useState(initialPrograms);
+  const [programs] = useState(initialPrograms);
+  const [studentZoneMenu, setStudentZoneMenu] = useState(initialStudentZoneMenu);
 
   const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastRefresh = useRef(0);
@@ -151,6 +159,13 @@ export function SiteLiveProvider({
           if (table === "site_settings") {
             void fetchLiveApplyEnabled().then((next) => {
               if (next !== null) setApplyEnabled(next);
+            });
+            return;
+          }
+
+          if (table === "site_menu_items") {
+            void fetchLiveStudentZoneMenu().then((next) => {
+              if (next !== null) setStudentZoneMenu(next);
             });
             return;
           }
@@ -272,6 +287,12 @@ export function SiteLiveProvider({
         });
       }
 
+      if (menuContentChanged(previous, stamp)) {
+        void fetchLiveStudentZoneMenu().then((next) => {
+          if (!stopped && next !== null) setStudentZoneMenu(next);
+        });
+      }
+
       if (pageContentChanged(previous, stamp)) requestRefresh();
     };
 
@@ -295,7 +316,9 @@ export function SiteLiveProvider({
   }, [requestRefresh]);
 
   return (
-    <SiteLiveContext.Provider value={{ applyEnabled, flashNews, programs }}>
+    <SiteLiveContext.Provider
+      value={{ applyEnabled, flashNews, programs, studentZoneMenu }}
+    >
       {children}
     </SiteLiveContext.Provider>
   );
@@ -316,4 +339,9 @@ export function useFlashNews() {
 /** Programme names for the footer link column. */
 export function useLivePrograms() {
   return useContext(SiteLiveContext).programs;
+}
+
+/** CMS-managed Student Zone navigation. */
+export function useStudentZoneMenu() {
+  return useContext(SiteLiveContext).studentZoneMenu;
 }

@@ -1,7 +1,17 @@
+import type { Metadata } from "next";
 import PageHero from "@/components/PageHero";
 import ProgrammeCards from "@/components/ProgrammeCards";
 import { img } from "@/content/innerPageData";
 import { getProgrammes } from "@/lib/siteContent";
+
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({
+  title: "Programmes",
+  description:
+    "Compare the undergraduate programmes at Royal College of Arts & Science, Thrithala, including duration, scheme and department, under the FYUGP curriculum.",
+  path: "/academics/programmes",
+});
 
 // Rendered on every request rather than from the static cache.
 //

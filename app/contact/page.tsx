@@ -1,9 +1,22 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import { Mail, Phone } from "lucide-react";
 import PageHero from "@/components/PageHero";
 import ContactForm from "@/components/ContactForm";
 import { img } from "@/content/innerPageData";
 import { EMAIL, PHONES } from "@/content/contactDetails";
+
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({
+  // Bare page title. The root template appends the school name, and a title of
+  // "Contact Royal College of Arts & Science, Thrithala" would repeat the brand
+  // verbatim in the SERP.
+  title: "Contact",
+  description:
+    "Get phone numbers, email address, office hours and directions to Royal College of Arts & Science in Thrithala, Palakkad, Kerala.",
+  path: "/contact",
+});
 
 const contact = {
   title: "General office",

@@ -1,7 +1,17 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import PageHero from "@/components/PageHero";
 import { img } from "@/content/innerPageData";
 import { getNews } from "@/lib/siteContent";
+
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({
+  title: "News & Announcements",
+  description:
+    "Read the latest news, examination announcements and notices from Royal College of Arts & Science, Thrithala, Palakkad, Kerala.",
+  path: "/news",
+});
 
 // Rendered on every request rather than from the static cache.
 //

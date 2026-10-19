@@ -12,16 +12,15 @@ import {
   Check,
   Clock3,
   GraduationCap,
-  Heart,
   Landmark,
-  Lightbulb,
   Quote,
-  ShieldCheck,
   Sparkles,
   Users,
   type LucideIcon,
 } from "lucide-react";
 import { useEffect } from "react";
+import InstagramReels from "./InstagramReels";
+import VisitorStat from "./VisitorStat";
 
 export type HomeStat = {
   label: string;
@@ -65,24 +64,6 @@ const image = (id: string, width = 1600) =>
   `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${width}&q=85`;
 
 
-const strengths = [
-  {
-    icon: Lightbulb,
-    title: "Learn with purpose",
-    text: "Strong foundations and real-world context turn curiosity into capability.",
-  },
-  {
-    icon: Users,
-    title: "Grow together",
-    text: "A supportive community gives every student the confidence to contribute.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Lead with values",
-    text: "Integrity, empathy and responsibility are part of every learning experience.",
-  },
-];
-
 export default function HomePage({
   news,
   programs = [],
@@ -125,18 +106,22 @@ export default function HomePage({
   return (
     <main>
       <section className="hero" aria-label="Royal College of Arts & Science">
-        <div className="hero-media" aria-hidden="true">
+        {/* Full-bleed campus photo behind the copy. Kept out of the
+            screen-reader tree; the alt text is still the file's only
+            description for image search. */}
+        <div className="hero-bg" aria-hidden="true">
           <Image
             src="/images/spotlight.jpg"
-            alt=""
+            alt="Students on the Royal College of Arts & Science campus in Thrithala"
             fill
             priority
             sizes="100vw"
           />
         </div>
-        <div className="hero-overlay" aria-hidden="true" />
-        <div className="hero-lines" aria-hidden="true" />
-        <div className="container hero-content">
+        <div className="hero-veil" aria-hidden="true" />
+        <div className="hero-glow" aria-hidden="true" />
+        <div className="hero-grid-bg" aria-hidden="true" />
+        <div className="hero-inner">
           <div className="hero-copy">
             <div className="hero-kicker">
               <span>Admissions 2026–27 are now open</span>
@@ -145,7 +130,7 @@ export default function HomePage({
             <h1 className="visually-hidden">
               Royal College of Arts &amp; Science
             </h1>
-            <h2 className="hero-subline">
+            <h2 className="hero-title">
               Knowledge for Today.
               <span>Skills for Tomorrow.</span>
             </h2>
@@ -166,22 +151,10 @@ export default function HomePage({
               <span>Preparing thoughtful leaders since 2010</span>
             </div>
           </div>
-          <div className="hero-side" aria-label="College highlights">
-            <div className="hero-highlight">
-              <span className="highlight-label">A community with purpose</span>
-              <strong>20<span>+</span></strong>
-              <span>years of learning and growth</span>
-            </div>
-            <div className="hero-scroll">
-              <span>Scroll to explore</span>
-              <span className="scroll-line" />
-            </div>
+          <div className="hero-badge">
+            <strong>20<span>+</span></strong>
+            <span>years of learning and growth</span>
           </div>
-        </div>
-        <div className="hero-bottom container" aria-hidden="true">
-          <span>01</span>
-          <span className="hero-bottom-rule" />
-          <span>09</span>
         </div>
       </section>
 
@@ -189,6 +162,12 @@ export default function HomePage({
         <div className="container">
           <div className="statbar">
             {stats.map((stat, index) => {
+              // The visitor total is served by this site's counter, not the
+              // CMS, so it renders its own card with its own loading state.
+              if (stat.label.trim().toLowerCase() === "visitors") {
+                return <VisitorStat key="visitors" index={index} />;
+              }
+
               const Icon = STAT_ICONS[stat.iconKey] ?? BookOpen;
 
               return (
@@ -236,8 +215,8 @@ export default function HomePage({
           <div className="intro-visual reveal reveal-delay-2">
             <div className="intro-image">
               <Image
-                src={image("photo-1541339907198-e08756dedf3f", 2000)}
-                alt="Students walking through a welcoming college campus"
+                src="/images/graduation-caps.png"
+                alt="Graduates joyfully tossing their caps into the air"
                 fill
                 sizes="(max-width: 900px) 100vw, 620px"
               />
@@ -307,65 +286,13 @@ export default function HomePage({
         </div>
       </section>
 
-      <section className="section why-section">
-        <div className="container">
-          <div className="section-head why-head reveal">
-            <div>
-              <div className="section-kicker">03 / The Royal difference</div>
-              <h2>Built for the way you want to grow.</h2>
-            </div>
-            <Link className="text-link" href="/about/about-college">
-              Our values <ArrowRight size={17} />
-            </Link>
-          </div>
-          <div className="why-layout">
-            <div className="why-intro reveal">
-              <div className="why-icon"><Sparkles size={22} /></div>
-              <p className="muted">
-                An education should leave you with more than a qualification. It should
-                give you perspective, purpose and the courage to make your own choices.
-              </p>
-              <div className="why-number">01<span>/</span>03</div>
-            </div>
-            <div className="strength-list">
-              {strengths.map((strength, index) => {
-                const Icon = strength.icon;
-                return (
-                  <div className="strength-card reveal reveal-delay-2" key={strength.title}>
-                    <div className="strength-icon"><Icon size={20} /></div>
-                    <div>
-                      <h3>{strength.title}</h3>
-                      <p>{strength.text}</p>
-                    </div>
-                    <span className="strength-index">0{index + 1}</span>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="why-card reveal reveal-delay-3">
-              <div className="why-card-top">
-                <span className="why-card-label">The Royal promise</span>
-                <Heart size={19} />
-              </div>
-              <h3>Make room for more.</h3>
-              <p>More questions. More courage. More of the person you are becoming.</p>
-              <Link className="text-link text-link-light" href="/admissions">
-                Find your place <ArrowRight size={17} />
-              </Link>
-              <div className="why-card-orbit orbit-one" />
-              <div className="why-card-orbit orbit-two" />
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section className="admissions-section">
         <div className="container">
           <div className="admissions-panel reveal">
             <div className="admissions-media" aria-hidden="true">
               <Image
                 src={image("photo-1523240795612-9a054b0db644", 1800)}
-                alt=""
+                alt="Undergraduate students at Royal College of Arts & Science, Thrithala"
                 fill
                 sizes="100vw"
               />
@@ -395,6 +322,8 @@ export default function HomePage({
           </div>
         </div>
       </section>
+
+      <InstagramReels />
 
       <section className="section news-section" id="news">
         <div className="container">

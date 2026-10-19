@@ -3,12 +3,15 @@
 import { ChevronDown, Menu, ShieldCheck, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
-import { useApplyEnabled } from "./SiteLiveProvider";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { activeStudentZoneItems } from "@/content/studentZoneMenu";
+import { useApplyEnabled, useStudentZoneMenu } from "./SiteLiveProvider";
 
 type MegaLink = {
   label: string;
   href: string;
+  /** True for http(s) destinations that open in a new tab. */
+  external?: boolean;
 };
 
 type MegaMenu = {
@@ -16,7 +19,8 @@ type MegaMenu = {
   label: string;
   description: string;
   href: string;
-  links: MegaLink[];
+  /** Two-column list of links with descriptions. */
+  links?: MegaLink[];
 };
 
 type NavigationItem = {
@@ -31,9 +35,10 @@ const APPLY_URL = "https://royalcollege.vercel.app/apply";
  * Staff shortcut to the separate admin app, which lives on its own deployment.
  * Icon only, and labelled for screen readers so it is not an unlabelled target.
  */
-const ADMIN_URL = "https://royalcollege.vercel.app";
+const ADMIN_URL = "https://erp.royalcollege.net";
 
-const megaMenus: MegaMenu[] = [
+/** The three menus that are part of the site's own structure. */
+const staticMegaMenus: MegaMenu[] = [
   {
     id: "about",
     label: "About",
@@ -63,39 +68,55 @@ const megaMenus: MegaMenu[] = [
       { label: "Academic Calendar", href: "/academics/academic-calendar" },
     ],
   },
-  {
-    id: "campus",
-    label: "Campus",
-    description:
-      "Life at Royal College — gallery, library, NSS and student clubs.",
-    href: "/campus/campus-life",
-    links: [
-      { label: "Campus Life", href: "/campus/campus-life" },
-      { label: "Gallery", href: "/campus/gallery" },
-      { label: "Library", href: "/campus/library" },
-      { label: "NSS", href: "/campus/nss" },
-      { label: "Clubs & Activities", href: "/campus/clubs-activities" },
-    ],
-  },
 ];
 
 const navigation: NavigationItem[] = [
   { label: "Home", href: "/" },
   { label: "About", href: "/about/about-college", menuId: "about" },
   { label: "Academics", href: "/academics/academic-overview", menuId: "academics" },
-  { label: "Campus", href: "/campus/campus-life", menuId: "campus" },
+  { label: "Student's Zone", href: "/student-zone", menuId: "student-zone" },
   { label: "News", href: "/news" },
   { label: "Contact", href: "/contact" },
 ];
 
+/** True when a menu has something to show in a dropdown. */
+function hasLinks(menu: MegaMenu | undefined): boolean {
+  if (!menu) return false;
+
+  return Boolean(menu.links?.length);
+}
+
 export default function Header() {
   const applyEnabled = useApplyEnabled();
+  const studentZone = useStudentZoneMenu();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const closeTimer = useRef<number | null>(null);
   // Used to tell a click inside the header from one on the page behind it.
   const headerRef = useRef<HTMLElement>(null);
+
+  // The Student Zone menu comes from the CMS (or the typed fallback), so its
+  // items can change while the page is open. About / Academics stay static
+  // because they describe the site's own fixed structure.
+  const megaMenus = useMemo<MegaMenu[]>(
+    () => [
+      ...staticMegaMenus,
+      {
+        id: "student-zone",
+        label: studentZone.label,
+        description:
+          "Clubs, NSS, the students' union, publications, library and student resources.",
+        href: studentZone.href,
+        links: activeStudentZoneItems(studentZone).map((item) => ({
+          label: item.label,
+          href: item.href,
+          external: item.external,
+        })),
+      },
+    ],
+    [studentZone],
+  );
 
   const clearCloseTimer = () => {
     if (closeTimer.current !== null) {
@@ -157,6 +178,9 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, []);
 
+  const linkAttrs = (link: MegaLink) =>
+    link.external ? { target: "_blank", rel: "noopener noreferrer" } : {};
+
   return (
     <header
       ref={headerRef}
@@ -170,7 +194,7 @@ export default function Header() {
             <Image
               className="crest-image"
               src="/college-mark.png"
-              alt="Royal College of Arts &amp; Science crest"
+              alt="Royal College of Arts & Science logo"
               width={160}
               height={153}
               priority
@@ -190,7 +214,10 @@ export default function Header() {
               ? megaMenus.find((entry) => entry.id === item.menuId)
               : undefined;
 
-            if (!menu) {
+            // A menu with nothing published yet (a CMS-managed menu switched
+            // off) renders as a plain link to its overview page rather than an
+            // empty dropdown.
+            if (!menu || !hasLinks(menu)) {
               return (
                 <a href={item.href} key={item.label} onClick={closeMenus}>
                   {item.label}
@@ -219,13 +246,10 @@ export default function Header() {
                   aria-haspopup="true"
                   onClick={(event) => {
                     // Clicking a main item opens its submenu and never
-                    // navigates. The old behaviour sent people to a single
-                    // arbitrary page (About -> /about/about-college) and left
-                    // them wondering where the rest of the section had gone.
-                    // The link stays in the markup so the href still reaches a
-                    // meaningful page for crawlers and for middle-click, and
-                    // the mega panel carries a "View all" link for anyone who
-                    // does want the overview page.
+                    // navigates. The link stays in the markup so the href still
+                    // reaches a meaningful page for crawlers and middle-click,
+                    // and the mega panel carries a "View all" link for anyone
+                    // who does want the overview page.
                     event.preventDefault();
                     toggleMenu(menu.id);
                   }}
@@ -254,8 +278,8 @@ export default function Header() {
                   className={`mobile-subnav ${isActive ? "is-open" : ""}`}
                   aria-label={`${menu.label} sub-navigation`}
                 >
-                  {menu.links.map((link) => (
-                    <a href={link.href} key={link.href} onClick={closeMenus}>
+                  {menu.links?.map((link) => (
+                    <a href={link.href} key={link.href} onClick={closeMenus} {...linkAttrs(link)}>
                       {link.label}
                     </a>
                   ))}
@@ -302,6 +326,7 @@ export default function Header() {
       </div>
       {megaMenus.map((menu) => {
         const isActive = activeMenu === menu.id;
+
         return (
           <div
             className={`mega-layer ${isActive ? "is-open" : ""}`}
@@ -322,8 +347,13 @@ export default function Header() {
                   </a>
                 </div>
                 <div className="mega-links">
-                  {menu.links.map((link) => (
-                    <a href={link.href} key={link.href} onClick={closeMenus}>
+                  {menu.links?.map((link) => (
+                    <a
+                      href={link.href}
+                      key={link.href}
+                      onClick={closeMenus}
+                      {...linkAttrs(link)}
+                    >
                       {link.label}
                     </a>
                   ))}

@@ -341,6 +341,63 @@ const drafts: Record<string, PageDraft> = {
       ],
     },
   },
+
+"students-union": {
+    title: "Students' Union",
+    heroImage: img("photo-1523240795612-9a054b0db644"),
+    heroLead: "Representing student voices, leadership and campus life.",
+    kicker: "Student life",
+    heading: "Students' Union",
+    lead: "",
+    points: [],
+    highlights: {
+      kicker: "",
+      title: "",
+      items: [],
+    },
+  },
+
+  "college-magazine": {
+    title: "College Magazine",
+    heroImage: img("photo-1517457373958-b7bdd4587205", 2000),
+    heroLead: "The annual college magazine — student writing, art and the year in review.",
+    kicker: "Student life",
+    heading: "The year, in the students' own words.",
+    lead: "The college magazine is published each academic year and brings together student writing, poetry, art and the highlights of campus life. It is edited by a student editorial team with faculty guidance, and is a record of the year that students can keep.",
+    points: [
+      {
+        title: "Written and edited by students",
+        text: "Submissions come from across departments, with a student editorial team shaping the final issue.",
+      },
+      {
+        title: "A record of the year",
+        text: "The magazine captures events, achievements and campus life alongside creative work.",
+      },
+      {
+        title: "Open to every student",
+        text: "Students in any programme can contribute writing, artwork, photography or reports.",
+      },
+    ],
+    highlights: {
+      kicker: "Inside the magazine",
+      title: "What it contains",
+      items: [
+        {
+          title: "Creative writing and poetry",
+          text: "Original writing from students across years and departments.",
+        },
+        {
+          title: "Art and photography",
+          text: "Student artwork and photography from campus events and everyday college life.",
+        },
+        {
+          title: "The year in review",
+          text: "Reports on events, achievements and activities from the academic year.",
+        },
+      ],
+    },
+  },
+
 };
 
 const built = Object.fromEntries(

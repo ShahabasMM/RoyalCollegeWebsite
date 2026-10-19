@@ -1,5 +1,22 @@
 import type { NextConfig } from 'next'
-const nextConfig: NextConfig = { images: {
+const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      // Removed from the Student Zone; send old links to the section page
+      // rather than leaving a 404.
+      {
+        source: '/student-zone/academic-associations',
+        destination: '/student-zone',
+        permanent: true,
+      },
+      {
+        source: '/student-zone/welfare-cells',
+        destination: '/student-zone',
+        permanent: true,
+      },
+    ]
+  },
+  images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'https', hostname: 'plus.unsplash.com' },

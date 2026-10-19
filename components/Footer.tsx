@@ -72,7 +72,7 @@ export default function Footer() {
               <Image
                 className="crest-image"
                 src="/college-mark.png"
-                alt="Royal College of Arts &amp; Science crest"
+                alt="Royal College of Arts & Science logo"
                 width={160}
                 height={153}
               />
@@ -90,7 +90,7 @@ export default function Footer() {
             purpose and make a meaningful difference.
           </p>
           <div className="social-links" aria-label="Social media">
-            <a href="https://www.instagram.com" target="_blank" rel="noreferrer" aria-label="Instagram">
+            <a href="https://www.instagram.com/royal_college_thrithala/" target="_blank" rel="noreferrer" aria-label="Instagram">
               <Instagram size={17} />
             </a>
             <a href="https://www.linkedin.com" target="_blank" rel="noreferrer" aria-label="LinkedIn">

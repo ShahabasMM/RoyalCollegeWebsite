@@ -2,6 +2,14 @@
 
 import { getBrowserClient } from "./browserClient";
 import { safeHref } from "./safeHref";
+import {
+  studentZoneMenu as fallbackStudentZoneMenu,
+  type StudentZoneMenu,
+} from "@/content/studentZoneMenu";
+import {
+  buildStudentZoneItems,
+  type StudentZoneMenuItemRow,
+} from "./studentZoneMenuBuild";
 
 export type LiveFlashNotice = {
   message: string;
@@ -32,6 +40,46 @@ export async function fetchLiveApplyEnabled(): Promise<boolean | null> {
     if (error || !data) return null;
 
     return typeof data.apply_enabled === "boolean" ? data.apply_enabled : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Re-reads the published Student Zone menu after a realtime change.
+ *
+ * Returns null when the read fails, so the caller keeps the server-rendered
+ * menu rather than blanking the navigation. A table with no rows at all is
+ * also treated as "not configured" (returns null, keeping the fallback), since
+ * that is the state the schema ships in. Once rows exist, an empty result is
+ * real: staff unpublished everything, and the caller should show the empty
+ * menu.
+ */
+export async function fetchLiveStudentZoneMenu(): Promise<StudentZoneMenu | null> {
+  const supabase = getBrowserClient();
+
+  if (!supabase) return null;
+
+  try {
+    // Unfiltered on purpose: an all-unpublished menu and an empty table look
+    // identical under `is_published = true`, and only the unfiltered count
+    // tells them apart.
+    const { data, error } = await supabase
+      .from("site_menu_items")
+      .select("*")
+      .eq("menu_key", "student_zone")
+      .order("display_order", { ascending: true });
+
+    if (error || !Array.isArray(data)) return null;
+
+    if (data.length === 0) return null;
+
+    return {
+      ...fallbackStudentZoneMenu,
+      items: buildStudentZoneItems(
+        (data as StudentZoneMenuItemRow[]).filter((row) => row.is_published !== false),
+      ),
+    };
   } catch {
     return null;
   }
@@ -98,6 +146,7 @@ const PAGE_STAMP_KEYS = [
 ];
 
 const FLASH_KEY = "site_flash_news";
+const MENU_KEY = "site_menu_items";
 
 /**
  * Returns the current stamp, or null if the helper function is not installed
@@ -144,4 +193,8 @@ export function pageContentChanged(a: ContentStamp, b: ContentStamp) {
 
 export function flashContentChanged(a: ContentStamp, b: ContentStamp) {
   return changed(a, b, [FLASH_KEY]);
+}
+
+export function menuContentChanged(a: ContentStamp, b: ContentStamp) {
+  return changed(a, b, [MENU_KEY]);
 }

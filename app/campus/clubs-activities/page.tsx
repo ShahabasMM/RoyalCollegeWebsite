@@ -11,11 +11,14 @@ import {
   clubsTitle,
 } from "@/content/clubs";
 
-export const metadata: Metadata = {
-  title: "Clubs & Activities | Royal College of Arts & Science",
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({
+  title: "Clubs & Activities",
   description:
-    "Arts and Sports, the Women Cell and Social Service Activities, with the office-bearers of each body and how to get involved.",
-};
+    "Explore clubs and activities at Royal College of Arts & Science, Thrithala — arts and sports, the Women's Cell, social service activities and how to get involved.",
+  path: "/campus/clubs-activities",
+});
 
 export default function ClubsActivitiesPage() {
   return (

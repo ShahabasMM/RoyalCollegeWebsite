@@ -1,8 +1,18 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import InnerPage from "@/components/InnerPage";
 import { buildPage, img } from "@/content/innerPageData";
 import type { InnerPageData } from "@/components/InnerPage";
+
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({
+  title: "Academics",
+  description:
+    "Explore the undergraduate departments, curriculum structure, internal assessment and faculty mentoring at Royal College of Arts & Science, Thrithala, affiliated to the University of Calicut.",
+  path: "/academics",
+});
 
 const data: InnerPageData = buildPage("Academics", {
   title: "Academics",

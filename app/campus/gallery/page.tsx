@@ -4,11 +4,14 @@ import PageHero from "@/components/PageHero";
 import { galleryHero, galleryHeroLead, galleryLead } from "@/content/gallery";
 import { getGallery } from "@/lib/siteContent";
 
-export const metadata: Metadata = {
-  title: "Gallery | Royal College of Arts & Science",
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({
+  title: "Gallery",
   description:
-    "Photographs from the Royal College campus, events, sports and community programmes.",
-};
+    "View photographs of the campus, events, sports and community programmes at Royal College of Arts & Science, Thrithala.",
+  path: "/campus/gallery",
+});
 
 export default async function GalleryPage() {
   const items = await getGallery();
@@ -22,7 +25,13 @@ export default async function GalleryPage() {
         lead={galleryHeroLead}
       />
 
-      <section className="content ip mg-content">
+      {/*
+        <main> rather than <section>: this was the only page without a main
+        landmark, which left screen-reader and crawler users with no indication
+        of where the page content begins. The class list is unchanged, so the
+        element swap alters nothing visually.
+      */}
+      <main className="content ip mg-content">
         <div className="container">
           <header className="mg-head">
             <p className="kicker">Campus life</p>
@@ -39,7 +48,7 @@ export default async function GalleryPage() {
             </p>
           )}
         </div>
-      </section>
+      </main>
     </>
   );
 }

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import PageHero from "@/components/PageHero";
 import Reveal from "@/components/Reveal";
@@ -5,6 +6,15 @@ import LibraryShelf from "@/components/LibraryShelf";
 import { library } from "@/content/library";
 import { APPLY_URL } from "@/content/innerPageData";
 import { getSiteSettings } from "@/lib/siteContent";
+
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({
+  title: "Library",
+  description:
+    "Explore the college library at Royal College of Arts & Science, Thrithala, including the collection, study space and how students can borrow and use resources.",
+  path: "/campus/library",
+});
 
 // Rendered on every request rather than from the static cache.
 //

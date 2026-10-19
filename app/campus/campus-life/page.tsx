@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { MapPin } from "lucide-react";
@@ -6,6 +7,15 @@ import Reveal from "@/components/Reveal";
 import { APPLY_URL } from "@/content/innerPageData";
 import { getSiteSettings } from "@/lib/siteContent";
 import { campusLife } from "@/content/campusLife";
+
+import { pageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = pageMetadata({
+  title: "Campus Life",
+  description:
+    "Explore campus life at Royal College of Arts & Science, Thrithala — the setting near the Bharathapuzha, student activities, clubs, events and everyday experience on campus.",
+  path: "/campus/campus-life",
+});
 
 // Rendered on every request rather than from the static cache.
 //
@@ -79,7 +89,7 @@ export default async function CampusLifePage() {
             <Reveal className="cl-closing">
               <Image
                 src={campusLife.closing.image}
-                alt=""
+                alt="A day on campus at Royal College of Arts & Science, Thrithala"
                 width={1600}
                 height={900}
                 sizes="100vw"

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { ExternalLink } from "lucide-react";
 import PageHero from "@/components/PageHero";
+import { breadcrumbJsonLd, type Crumb } from "@/lib/seo";
 
 export type PageVariant = "hero" | "stats" | "cards" | "steps" | "editorial";
 
@@ -87,7 +88,18 @@ const CARD_STYLE: Record<PageVariant, { columns: string; card: string }> = {
   steps: { columns: " ip-cards-wide", card: " ip-card-flat" },
 };
 
-export default function InnerPage({ data }: { data: InnerPageData }) {
+export default function InnerPage({
+  data,
+  crumbs,
+}: {
+  data: InnerPageData;
+  /**
+   * Ancestor levels above this page, most general first. `data.crumb` already
+   * carries the "Section / Title" string used for the visible trail; this
+   * supplies the hrefs that string cannot, which is what BreadcrumbList needs.
+   */
+  crumbs?: Crumb[];
+}) {
   const {
     title,
     crumb,
@@ -109,6 +121,17 @@ export default function InnerPage({ data }: { data: InnerPageData }) {
 
   const variant: PageVariant = data.variant ?? "hero";
   const style = CARD_STYLE[variant];
+
+  // BreadcrumbList: Home, then the ancestors passed by the route, then this
+  // page. Skipped when a route cannot say where its parent lives.
+  const breadcrumbSchema =
+    crumbs && crumbs.length > 0
+      ? breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          ...crumbs,
+          { name: title, path: "" },
+        ])
+      : null;
 
   const intro = (
     <>
@@ -227,6 +250,13 @@ export default function InnerPage({ data }: { data: InnerPageData }) {
 
   return (
     <>
+      {breadcrumbSchema ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        />
+      ) : null}
+
       <PageHero title={title} crumb={crumb} image={heroImage} lead={heroLead} />
 
       <main className="content ip">
